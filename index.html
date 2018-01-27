@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .map {
+            width: 800px;
+            height: 600px;
+            position: relative;
+            background-color: #cccccc;
+        }
+    </style>
+</head>
+<body>
+<div class="map" id="map"></div>
+</body>
+</html>
+<script>
+
+    /*
+    08-贪吃蛇
+  a.创建食物Food对象并测试
+  b.创建蛇Snake对象并测试
+  c.创建游戏Game对象，渲染游戏对象
+  d.开始游戏中，让蛇移动起来
+  e.让蛇自动移动起来
+  f.蛇重新渲染之前要删除原来的蛇
+  g.判断蛇头是否撞墙了
+  h.根据按键改变蛇移动的方向
+  i.蛇吃掉了食物长了一节身体
+  j.吃食物重新显示食物-五彩蛇
+  k.收尾
+     */
+    //找到地图
+    var map = document.getElementById("map");
+
+    //Food
+    ;(function (window) {
+
+        var foodList = [];
+
+        //创建食物对象
+        function Food(x, y, width, height, bgc) {
+            this.x = x || 0;
+            this.y = y || 0;
+            this.width = width || 20;
+            this.height = height || 20;
+            this.bgc = bgc || "black";
+        }
+
+        //让食物对象渲染出来，写到原型里面
+        Food.prototype.render = function () {
+            this.x = Math.floor(Math.random() * map.offsetWidth / this.width);
+            this.y = Math.floor(Math.random() * map.offsetHeight / this.height);
+            var div1 = document.createElement("div");
+            div1.style.position = "absolute";
+            div1.style.left = this.x * this.width + "px";
+            div1.style.top = this.y * this.height + "px";
+            div1.style.width = this.width + "px";
+            div1.style.height = this.height + "px";
+            div1.style.backgroundColor = this.bgc;
+            map.appendChild(div1);
+            foodList.push(div1);
+        }
+
+        //移除食物
+        Food.prototype.removeFood = function () {
+            for (var i = 0; i < foodList.length; i++) {
+                map.removeChild(foodList[i]);
+            }
+            //清空数组
+            foodList = [];
+        }
+
+        window.Food = Food;
+    }(window))
+
+    //Snake
+    ;(function (window) {
+        var bodyList = [];
+
+        //创建蛇对象
+        function Snake(width, height, direction) {
+            this.width = width || 20;
+            this.height = height || 20;
+            this.direction = direction || "right";
+            this.body = [
+                {x: 3, y: 1, color: "red"},
+                {x: 2, y: 1, color: "yellow"},
+                {x: 1, y: 1, color: "blue"},
+            ]
+        }
+
+        //把蛇对象渲染出来，写在原型中
+        Snake.prototype.render = function () {
+
+            removeSnake(bodyList);
+
+            for (var i = 0; i < this.body.length; i++) {
+                var div1 = document.createElement("div");
+                div1.style.position = "absolute";
+                div1.style.width = this.width + "px";
+                div1.style.height = this.height + "px";
+                div1.style.left = this.body[i].x * this.width + "px";
+                div1.style.top = this.body[i].y * this.height + "px";
+                div1.style.backgroundColor = this.body[i].color;
+                map.appendChild(div1);
+                bodyList.push(div1);
+            }
+        }
+
+        //创建一个移动蛇对象的方法
+        Snake.prototype.move = function () {
+
+            //移动除蛇头外的身体，把后一节放到前一节的位置
+            for (var i = this.body.length - 1; i > 0; i--) {
+                this.body[i].x = this.body[i - 1].x;
+                this.body[i].y = this.body[i - 1].y;
+            }
+            //移动蛇头
+            switch (this.direction) {
+                case "left":
+                    this.body[0].x--;
+                    break;
+                case "right":
+                    this.body[0].x++;
+                    break;
+                case "top":
+                    this.body[0].y--;
+                    break;
+                case "bottom":
+                    this.body[0].y++;
+                    break;
+            }
+
+        }
+
+        //创建一个删除map上的蛇的方法，每次渲染前先删除map上的蛇
+        function removeSnake() {
+
+            for (var i = 0; i < bodyList.length; i++) {
+
+                map.removeChild(bodyList[i]);
+            }
+            bodyList = [];
+            Math.ceil()
+
+        }
+
+        //创建一个蛇吃食物的方法
+
+        Snake.prototype.eatFood = function (food) {
+            //先判断蛇的头部有没有和食物重合，重合了就说明吃到食物了
+            if (this.body[0].x == food.x && this.body[0].y == food.y) {
+
+                var lastUnit = this.body[this.body.length - 1];
+
+                this.body.push({
+                    x: lastUnit.x,
+                    y: lastUnit.y,
+                    color: "rgb(" + Math.ceil(Math.random() * 255) + "," + Math.ceil(Math.random() * 255) + "," + Math.ceil(Math.random() * 255) + ")"
+                });
+
+                //吃到食物了就再随机生成一个食物
+
+                food.removeFood();
+                food.render();
+
+            }
+        }
+
+        window.Snake = Snake;
+    }(window))
+
+    //Game
+    ;(function (window) {
+
+        //创建游戏对象
+        function Game() {
+
+            this.food = new Food();
+            this.snake = new Snake();
+            // this.map = map;
+            that = this;
+        }
+
+        //创建开始游戏方法
+        Game.prototype.start = function () {
+
+            this.food.render();
+            this.snake.render();
+
+            runSnake();
+
+            changeDirection();
+
+        }
+
+        //创建一个让蛇自己动起来的方法
+        function runSnake() {
+            //让蛇自动动起来
+            var timeId = setInterval(function () {
+
+                this.snake.move();
+                this.snake.render();
+
+                //判断蛇动起来之后有没有超出地图,蛇每动一下都要判断一次
+                var snakeHeadX = this.snake.body[0].x * this.snake.width;
+                var snakeHeadY = this.snake.body[0].y * this.snake.height;
+                if (snakeHeadX >= map.offsetWidth || snakeHeadY >= map.offsetHeight || snakeHeadX < 0 || snakeHeadY < 0) {
+                    alert("游戏结束！");
+                    clearInterval(timeId);
+                }
+                //每动一下，判断有没有吃到食物
+                this.snake.eatFood(this.food);
+
+            }.bind(that), 200);
+
+        }
+
+        //创建一个游戏过程中改变蛇运动方向的方法
+        function changeDirection() {
+            document.onkeydown = function (e) {
+
+                e = e || event;
+
+                switch (e.keyCode) {
+                    case 37:
+                        if (that.snake.direction != "right") {
+                            that.snake.direction = "left";
+                        }
+                        break;
+                    case 38:
+                        if (that.snake.direction != "bottom") {
+                            that.snake.direction = "top";
+                        }
+                        break;
+                    case 39:
+                        if (that.snake.direction != "left") {
+                            that.snake.direction = "right";
+                        }
+                        break;
+                    case 40:
+                        if (that.snake.direction != "top") {
+                            that.snake.direction = "bottom";
+                        }
+                        break;
+                }
+            }
+        }
+
+        window.Game = Game;
+
+    }(window))
+
+    new Game().start();
+
+</script>
